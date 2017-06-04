@@ -68,7 +68,7 @@ Matrix matCarrega(char nomeArquivo[])
     {
         printf("Arquivo nao encontrado.\n");
         return NULL;
-    } 
+    }
 
     // Determinar quantidade de linhas e colunas;
     int i, j;
@@ -139,14 +139,14 @@ Matrix matCovariancia (Matrix mat)
 
             covar = covar / (mat -> lin - 1);
 
-            // Armazena a variancia na matriz 'cov': 
+            // Armazena a variancia na matriz 'cov':
             cov -> p[i][j] = covar;
         }
     }
 
     // Libera vetor media:
     free(media);
-    return cov;     
+    return cov;
 }
 
 Matrix matTransposta(Matrix mat)
@@ -181,7 +181,7 @@ Matrix matOposta (Matrix mat)
     for(i = 0; i < mat -> lin; i++)
         for(j = 0; j < mat -> col; j++)
             oposta -> p[i][j] = -oposta -> p[i][j];
-        
+
     return oposta;
 }
 
@@ -270,10 +270,10 @@ Matrix matDecomposicaoLU(Matrix upper)
     return lower;
 }
 
-Matrix matDecomposicaoPivotLU(Matrix upper, double *b, int n)
+Matrix matDecomposicaoPivotLU(Matrix upper, Matrix P)
 {
     // Prerequisitos (Matriz quadrada nao nula):
-    if((upper == NULL) || (upper -> lin != upper -> col))
+    if((upper == NULL) || (P == NULL) || (upper -> lin != upper -> col) || (P -> lin != upper -> lin) || (P -> col != upper -> col))
         return NULL;
 
     // Cria uma nova matriz para receber os fatores:
@@ -291,11 +291,7 @@ Matrix matDecomposicaoPivotLU(Matrix upper, double *b, int n)
         {
             matTrocaLinhas(upper, pivo, i);
             matTrocaLinhas(lower, pivo, i);
-
-            // Realiza a troca no vetor solucao:
-            double aux = b[pivo];
-            b[pivo] = b[i];
-            b[i] = aux;
+            matTrocaLinhas(P, pivo, i);
         }
 
         // Eliminacao de gauss (se elemento na linha atual nao for zero):
@@ -321,51 +317,49 @@ Matrix matDecomposicaoPivotLU(Matrix upper, double *b, int n)
     return lower;
 }
 
-Matrix matSolucaoPivotLU(Matrix mat, double *b, int n)
+Matrix matSolucaoPivotLU(Matrix upper, Matrix lower, Matrix P, Matrix b)
 {
-    // Prerequisitos (Matriz quadrada nao nula, vetor do tamanho da matriz):
-    if((mat == NULL) || (mat -> lin != mat -> col) || (n != mat -> lin))
+    // Prerequisitos (Matrizes quadradas nao nulas, vetor do tamanho da matriz):
+    if((upper == NULL) || (lower == NULL) || (P == NULL) || (upper -> lin != upper -> col)
+        || (lower -> lin != lower -> col) || (lower -> lin != upper -> lin)
+        || (P -> lin != P -> col) || (P -> lin != upper -> lin))
         return NULL;
 
-    // Cria uma copia de 'mat' para triangulacao superior:
-    Matrix upper = matCopia(mat);
-
-    // Decomposicao LU:
-    Matrix lower = matDecomposicaoPivotLU(upper, b, n);
+    // Realiza o produto matricial entre a matriz de permutacoes e a matriz solucao:
+    Matrix Pb = matProdutoMatricial(P, b);
 
     // Substituicoes sucessivas:
-    Matrix aux = matSubstSucessiva(lower, b, n);
+    Matrix aux = matSubstSucessiva(lower, Pb);
 
     // Substituicoes retroativas:
     Matrix res = matSubstRetroativa(upper, aux);
 
     // Libera memoria:
-    matLibera(lower);
-    matLibera(upper);
     matLibera(aux);
+    matLibera(Pb);
 
     // Retorna a matriz solucao:
     return res;
 }
 
-Matrix matSubstSucessiva(Matrix lower, double *b, int n)
+Matrix matSubstSucessiva(Matrix lower, Matrix b)
 {
     // Prerequisitos (Matriz quadrada nao nula, vetor do tamanho da matriz):
-    if((lower == NULL) || (lower -> lin != lower -> col) || (lower -> lin != n))
+    if((lower == NULL) || (lower -> lin != lower -> col))
         return NULL;
-    
+
     // Cria uma matriz (1, n) auxiliar para armazenar 'y' em (Ly = b):
-    Matrix aux = matCria(1, n);
+    Matrix aux = matCria(1, lower -> col);
 
     int i, j;
-    aux -> p[0][0] = b[0] / lower -> p [0][0];
+    aux -> p[0][0] = b -> p[0][0] / lower -> p [0][0];
     for(i = 1; i < lower -> lin; i++)
     {
         double soma = 0;
         for(j = 0; j < i; j++)
             soma += lower -> p[i][j] * aux -> p[0][j];
 
-        aux -> p[0][i] = (b[i] - soma) / lower -> p[i][i];
+        aux -> p[0][i] = (b -> p[i][0] - soma) / lower -> p[i][i];
     }
 
     return aux;
@@ -400,23 +394,39 @@ Matrix matInversa(Matrix mat)
     if((mat == NULL) || (mat -> lin != mat -> col))
         return NULL;
 
-    // Cria um vetor que representa a matriz coluna da identidae nxn:
+    // Cria matriz identidade para ser usada como conjunto solucao:
     Matrix identidade = matIdentidade(mat -> lin);
 
     // Cria matriz que armazenara a inversa:
     Matrix inversa = matCria(mat -> lin, mat -> col);
 
+    // Determina as matrizes: lower, upper, e permutacao:
+    Matrix P = matIdentidade(mat -> lin);
+    Matrix upper = matCopia(mat);
+    Matrix lower = matDecomposicaoPivotLU(upper, P);
+
+    //
     int i, j;
     for(i = 0; i < mat -> col; i++)
     {
         // Resolva o sistema para a coluna atual da identidade:
-        Matrix colInversa = matSolucaoPivotLU(mat, identidade -> p[i], identidade -> col);
+        Matrix b = matCria(mat -> lin, 1);
+        int k;
+        for(k = 0; k < mat -> lin; k++)
+            b -> p[k][0] = identidade -> p[k][i];
+
+        Matrix colInversa = matSolucaoPivotLU(upper, lower, P, b);
 
         // Copia o resultado do sistema linear para a matriz inversa:
         for(j = 0; j < inversa -> lin; j++)
             inversa -> p[j][i] = colInversa -> p[0][j];
+
+        matLibera(b);
     }
 
+    matLibera(P);
+    matLibera(upper);
+    matLibera(lower);
     matLibera(identidade);
     return inversa;
 }
@@ -458,7 +468,7 @@ double matSuperior (Matrix mat)
             matTransformaLinha(mat, j, i, mult);
         }
     }
-    
+
     // Calcula o determinante (diagonal principal):
     for(i = 0; i < mat -> lin; i++)
         det = det * mat -> p[i][i];
@@ -495,7 +505,7 @@ double matSuperiorPivot (Matrix mat)
                     mat -> p[j][k] = mat -> p[j][k] - (mult * mat -> p[i][k]);
             }
     }
-    
+
     // Calcula o determinante (diagonal principal):
     for(i = 0; i < mat -> lin; i++)
         det = det * mat -> p[i][i];
