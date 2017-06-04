@@ -217,6 +217,29 @@ Matrix matSubtrai (Matrix mat1, Matrix mat2)
     return subtracao;
 }
 
+/*Retorna multiplicao da matriz por um valor escalar*/
+Matrix MATmultiplicaPorEscalar(Matrix mat, float escalar)
+{
+  /*variaveis de laco*/
+  int i,j;
+
+  /*matriz resultante da multiplicacao*/
+  Matrix aux = (Matrix) matCria(mat->lin,mat->col);
+
+  /*percorre toda matriz*/
+  for (i = 0; i < aux->lin; i++)
+  {
+    for (j = 0; j < aux->col; j++)
+    {
+      /*multiplica o respectivo valor pelo escalar*/
+      aux->p[i][j] = mat->p[i][j] * escalar;
+    }
+  }
+
+  /*retorna o produto da operacao*/
+  return aux;
+}
+
 Matrix matProdutoMatricial (Matrix mat1, Matrix mat2)
 {
     // Prerequisitos (Matrizes nao nulas, n.o de colunas de 'mat1' igual ao n.o de linhas de 'mat2'):

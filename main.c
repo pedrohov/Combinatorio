@@ -3,7 +3,7 @@
 #include "matrix.h"
 
 int main(int argc, char const *argv[])
-{s
+{
   /*ponteiro para os arquivos de entrada*/
   FILE *datasetTrainning = fopen(argv[1],"r");
   FILE *datasetComparison = fopen(argv[2],"r");
