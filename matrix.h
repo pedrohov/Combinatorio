@@ -1,37 +1,41 @@
 #ifndef MATRIX_H_INCLUDED
 #define MATRIX_H_INCLUDED
 
-// Estrutura:
-struct Tmatrix{
-	int lin;
-	int col;
-	float **p;
-} matrix;
-
 // Tipo:
-typedef struct Tmatrix *MATRIX;
+typedef struct Tmatrix *Matrix;
+
 
 // Sub-rotinas:
-MATRIX MATaloca (int lin, int col);
-MATRIX MATcopia (MATRIX mat);
-MATRIX MATcarrega (char nomeArquivo[]);
-MATRIX MATidentidade (int n);
-MATRIX MATtransposta (MATRIX mat);
-MATRIX MAToposta (MATRIX mat);
-MATRIX MATsoma (MATRIX mat1, MATRIX mat2); // Retorna soma das matrizes ou NULL (n possivel).
-MATRIX MATsubtrai (MATRIX mat1, MATRIX mat2); // Retorna subtração das matrizes ou NULL.
-MATRIX MATmultiplica (MATRIX mat1, MATRIX mat2); // Retorna multiplicação das matrizes ou NULL.
-float MATget (MATRIX mat, int lin, int col); // Retorna valor.
-float MATdeterminante (MATRIX mat); // Retorna determinante se a matriz for quadrada.
-float MATtriangulacao (MATRIX mat); // Triangula a matriz e retorna seu determinante.
-int MATigual (MATRIX mat1, MATRIX mat2); // 1 -> iguais. 0 -> diferentes.
-int MATlocalizaPivo (MATRIX mat , int lin, int col);
-void MATdesaloca (MATRIX mat);
-void MATimprime (MATRIX mat);
-void MATput (MATRIX mat, int lin, int col, float valor);
-void MATsalva (MATRIX mat, char nomeArquivo[]);
-void MATtrocaLinhas (MATRIX mat, int lin1, int lin2);
-void MATmultLinhaEscalar (MATRIX mat, int lin, float escalar);
-void MATtransformaLinha (MATRIX mat , int linAlvo, int lin, float escalar);
+Matrix 	matCria (int lin, int col);                             // Cria uma matriz m[lin][col].
+Matrix 	matCopia (Matrix mat);                                  // Retorna uma copia profunda da matriz 'mat'.
+Matrix 	matCarrega (char nomeArquivo[]);                        // Carrega uma matriz de um arquivo.
+Matrix 	matIdentidade (int n);                                  // Gera a matriz identidade m[n][n].
+Matrix 	matCovariancia (Matrix mat);                            // Retorna a matriz covariancia de 'mat'.
+Matrix 	matTransposta (Matrix mat);                             // Retorna a matriz transposta de 'mat'.
+Matrix 	matOposta (Matrix mat);                                 // Retorna a matriz oposta de 'mat'.
+Matrix 	matSoma (Matrix mat1, Matrix mat2);                     // Retorna a soma das matrizes ou NULL (impossivel somar).
+Matrix 	matSubtrai (Matrix mat1, Matrix mat2);                  // Retorna a subtracao de 'mat1' - 'mat2' ou NULL (impossivel subtrair).
+Matrix 	matProdutoMatricial (Matrix mat1, Matrix mat2);         // Retorna o produto matricial de 'mat1' (x) 'mat2' ou NULL (impossivel multiplicar).
+Matrix 	matDecomposicaoLU(Matrix upper);                        // Modifica a matriz 'upper' em sua triangular superior. Retorna a triangular inferior.
+Matrix 	matDecomposicaoPivotLU(Matrix upper, double *b, int n); // Realiza a decomposicao LU com pivoteamento.
+Matrix 	matSolucaoPivotLU(Matrix mat, double *b, int n);        // Retorna uma matriz (1 x n) com a solucao do sistema (mat, b).
+Matrix 	matSubstSucessiva(Matrix lower, double *b, int n);      // Retorna uma matriz (1 x n) com a solucao do sistema (lower, b) (Usado por SolucaoPivotLU).
+Matrix 	matSubstRetroativa(Matrix upper, Matrix y);             // Retorna a solucao de upper(n, n) por y(1, n) (Usado por SolucaoPivotLU).
+Matrix  matInversa(Matrix mat);                                 // Retorna a matriz inversa de 'mat' ou NULL (impossivel calcular).
+double 	matDeterminante (Matrix mat);                           // Retorna o determinante de uma matriz quadrada.
+double 	matSuperior (Matrix mat);                               // Realiza a triangulacao superior da matriz por Eliminacao de Gauss, retorna seu determinante.
+double 	matSuperiorPivot (Matrix mat);                          // Realiza a triangulacao por Eliminacao de Gauss com pivoteamento, retorna seu determinante.
+double 	matPega (Matrix mat, int lin, int col);                 // Retorna o valor na posicao m(lin, col).
+double	matProdutoEscalar (Matrix mat1, Matrix mat2);           // Retorna o produto escalar entre mat1(m, 1) x mat2(1, n) ou -1 (impossivel multiplicar).
+int 	matIgual (Matrix mat1, Matrix mat2);                    // Retorna 1 se as matrizes forem iguais ou 0 se diferentes.
+int 	matLocalizaPivo (Matrix mat , int lin, int col);        // Procura pelo maior elemento igual ou abaixo da linha 'lin' na coluna 'col'.
+void	matLibera (Matrix mat);                                 // Libera a memoria utilizada pela matriz 'mat'.
+void 	matImprime (Matrix mat);                                // Imprime a matriz no console.
+void 	matColoca (Matrix mat, int lin, int col, double valor); // Altera o valor da posicao mat[lin][col].
+void 	matSalva (Matrix mat, char nomeArquivo[]);              // Salva a matriz em um arquivo.
+void 	matTrocaLinhas (Matrix mat, int lin1, int lin2);        // Troca as linhas 'lin1' e 'lin2' da matriz 'mat'.
+void	matMultiplicaEscalar(Matrix mat, double escalar);       // Multiplica a matriz 'mat' por um numero real.
+void 	matMultiplicaLinhaEscalar (Matrix mat, int lin, double escalar);           // Multiplica a linha 'lin' por um numero real.
+void 	matTransformaLinha (Matrix mat , int linAlvo, int lin, double escalar);    // Faz [linAlvo - (lin * escalar)] para todos os elementos da linha (auxilia LU).
 
 #endif // MATRIX_H_INCLUDED
