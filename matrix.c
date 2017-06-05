@@ -795,3 +795,24 @@ Matrix matParseDataset(const char* local)
     fclose(arquivo);
     return data;
 }
+
+Matrix matVetMedia (Matrix mat)
+{
+    // Prerequisitos (Matriz nao nula):
+    if(mat == NULL)
+        return NULL;
+
+    Matrix media = matCria(mat -> col, 1);
+    int i, j;
+    for(i = 0; i < mat -> col; i++)
+    {
+        double soma = 0;
+        for(j = 0; j < mat -> lin; j++)
+            soma += mat -> p[j][i];
+
+        soma = soma / mat -> lin;
+        media -> p[i][0] = soma;
+    }
+
+    return media; 
+}
