@@ -217,28 +217,6 @@ Matrix matSubtrai (Matrix mat1, Matrix mat2)
     return subtracao;
 }
 
-/*Retorna multiplicao da matriz por um valor escalar*/
-Matrix MATmultiplicaPorEscalar(Matrix mat, float escalar)
-{
-  /*variaveis de laco*/
-  int i,j;
-
-  /*matriz resultante da multiplicacao*/
-  Matrix aux = (Matrix) matCria(mat->lin,mat->col);
-
-  /*percorre toda matriz*/
-  for (i = 0; i < aux->lin; i++)
-  {
-    for (j = 0; j < aux->col; j++)
-    {
-      /*multiplica o respectivo valor pelo escalar*/
-      aux->p[i][j] = mat->p[i][j] * escalar;
-    }
-  }
-
-  /*retorna o produto da operacao*/
-  return aux;
-}
 
 Matrix matProdutoMatricial (Matrix mat1, Matrix mat2)
 {
@@ -628,7 +606,7 @@ void matImprime(Matrix mat)
     for(i = 0; i < mat->lin; i++)
     {
         for(j = 0; j < mat -> col; j++)
-            printf("%.4lf\t", mat -> p[i][j]);
+            printf("%.2lf\t", mat -> p[i][j]);
 
         // Nova linha para cada nova linha da matriz:
         printf("\n");
@@ -735,4 +713,85 @@ void matTransformaLinha (Matrix mat , int linAlvo, int lin, double escalar)
         mat -> p[linAlvo][i] = mat -> p[linAlvo][i] - (mat -> p[lin][i] * escalar);
 
     return;
+}
+
+Matrix matParseDataset(const char* local)
+{
+    // Abre o arquivo para leitura:
+    FILE *arquivo = fopen(local, "r");
+
+    // Caso o arquivo nao for encontrado:
+    if(arquivo == NULL)
+    {
+        printf("Arquivo '%s' nao encontrado.\n", local);
+        return NULL;
+    }
+
+    char controle;
+    double valor;
+    int linhas = 0, colunas = 0, lin = 0;
+    Matrix data = NULL;
+    int criada = 0;
+
+    while(fscanf(arquivo, "%c", &controle) != EOF)
+    {
+        // Comentario: Pula a linha:
+        if(controle == '#')
+        {
+            char skip = '0';
+            while(skip != '\n')
+                fscanf(arquivo, "%c", &skip);
+        }
+        // Listagem dos valores da tupla:
+        else if(controle == 't')
+        {
+            // Prerequisitos:
+            if(!criada)
+            {
+                printf("Formato incorreto.\n");
+                fclose(arquivo);
+                return NULL;
+            }
+
+            // Le V - 1 variaveis:
+            int i;
+            for(i = 0; i < colunas; i++)
+            {
+                fscanf(arquivo, "%lf", &valor);
+                matColoca(data, lin, i, valor);
+            }
+            lin++;
+
+            // Le a classe:
+            fscanf(arquivo, "%lf", &valor);
+        }
+        else if(controle == 'N')
+        {
+            fscanf(arquivo, "%d", &linhas);
+
+            if(colunas != 0)
+            {
+                criada = 1;
+                data = matCria(linhas, colunas - 1);
+            }
+        }
+        else if(controle == 'V')
+        {
+            fscanf(arquivo, "%d", &colunas);
+
+            if(linhas != 0)
+            {
+                criada = 1;
+                data = matCria(linhas, colunas - 1);
+            }
+        }
+        else if(controle == 'K')
+        {
+            fscanf(arquivo, "%lf", &valor);
+            //printf("%lf\n", valor);
+        }
+    }
+
+    fclose(arquivo);
+    return data;
 }

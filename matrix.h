@@ -16,7 +16,7 @@ Matrix 	matOposta (Matrix mat);                                 // Retorna a mat
 Matrix 	matSoma (Matrix mat1, Matrix mat2);                     // Retorna a soma das matrizes ou NULL (impossivel somar).
 Matrix 	matSubtrai (Matrix mat1, Matrix mat2);                  // Retorna a subtracao de 'mat1' - 'mat2' ou NULL (impossivel subtrair).
 /*Retorna multiplicao da matriz por um valor escalar*/
-Matrix MATmultiplicaPorEscalar (Matrix mat, float escalar);
+Matrix matMultiplicaPorEscalar (Matrix mat, float escalar);
 Matrix 	matProdutoMatricial (Matrix mat1, Matrix mat2);         // Retorna o produto matricial de 'mat1' (x) 'mat2' ou NULL (impossivel multiplicar).
 Matrix 	matDecomposicaoLU (Matrix upper);                       // Modifica a matriz 'upper' em sua triangular superior. Retorna a triangular inferior.
 Matrix 	matDecomposicaoPivotLU (Matrix upper, Matrix P);        // Realiza a decomposicao LU com pivoteamento. Recebe a matriz identidade P.
