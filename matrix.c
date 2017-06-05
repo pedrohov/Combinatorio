@@ -104,6 +104,54 @@ Matrix matIdentidade (int n)
     return identidade;
 }
 
+Matrix matVetMedia (Matrix mat)
+{
+    // Prerequisitos (Matriz nao nula):
+    if(mat == NULL)
+        return NULL;
+
+    // Cria uma matriz (n, 1):
+    Matrix media = matCria(mat -> col, 1);
+
+    // Armazena a media de cada variavel nas linhas da matriz:
+    int i, j;
+    for(i = 0; i < mat -> col; i++)
+    {
+        double soma = 0;
+        for(j = 0; j < mat -> lin; j++)
+            soma += mat -> p[j][i];
+
+        soma = soma / mat -> lin;
+        media -> p[i][0] = soma;
+    }
+
+    return media;
+}
+
+Matrix  matVetMediaClasse (Matrix mat, int linIni, int linFim)
+{
+    // Prerequisitos (Matriz nao nula):
+    if(mat == NULL)
+        return NULL;
+
+    // Cria uma matriz (n, 1):
+    Matrix media = matCria(mat -> col, 1);
+
+    // Armazena a media de cada variavel nas linhas da matriz:
+    int i, j;
+    for(i = 0; i < mat -> col; i++)
+    {
+        double soma = 0;
+        for(j = linIni; j <= linFim; j++)
+            soma += mat -> p[j][i];
+
+        soma = soma / (linFim - linIni + 1);
+        media -> p[i][0] = soma;
+    }
+
+    return media;
+}
+
 Matrix matCovariancia (Matrix mat)
 {
     // Prerequisitos (Matriz nao nula):
@@ -216,7 +264,6 @@ Matrix matSubtrai (Matrix mat1, Matrix mat2)
 
     return subtracao;
 }
-
 
 Matrix matProdutoMatricial (Matrix mat1, Matrix mat2)
 {
@@ -538,6 +585,15 @@ double matProdutoEscalar (Matrix mat1, Matrix mat2)
     return resultado;
 }
 
+int matNcolunas (Matrix mat)
+{
+    // Prerequisitos (Matrize nao nula):
+    if(mat == NULL)
+        return 0;
+
+    return mat -> col;
+}
+
 int matIgual (Matrix mat1, Matrix mat2)
 {
     // Prerequisitos (Matrizes nao nulas, numero de linhas e colunas igual):
@@ -715,7 +771,7 @@ void matTransformaLinha (Matrix mat , int linAlvo, int lin, double escalar)
     return;
 }
 
-Matrix matParseDataset(const char* local)
+Matrix* matParseDataset(const char* local, int *k)
 {
     // Abre o arquivo para leitura:
     FILE *arquivo = fopen(local, "r");
@@ -727,12 +783,17 @@ Matrix matParseDataset(const char* local)
         return NULL;
     }
 
-    char controle;
-    double valor;
-    int linhas = 0, colunas = 0, lin = 0;
-    Matrix data = NULL;
-    int criada = 0;
+    Matrix *data = NULL;            // Vetor de matrizes (data[0] = dataset, data[1..n] = vetores media).
+    int linhas = 0, colunas = 0;    // Qtd de linhas e colunas da matriz.
 
+    char controle;                  // Auxilia na leitura do arquivo.
+    int criada = 0;                 // Detectar datasets invalidos.
+    int lin = 0;                    // Linha atual de insercao.
+
+    int ultimaClasse = 0;           // Id da ultima classe lida.
+    int linhasClasse = 0;           // Quantidade de linhas da matriz data[0] da ultima classe lida.
+
+    // Parsing do dataset:
     while(fscanf(arquivo, "%c", &controle) != EOF)
     {
         // Comentario: Pula a linha:
@@ -745,7 +806,7 @@ Matrix matParseDataset(const char* local)
         // Listagem dos valores da tupla:
         else if(controle == 't')
         {
-            // Prerequisitos:
+            // Impedir formato invalido:
             if(!criada)
             {
                 printf("Formato incorreto.\n");
@@ -755,64 +816,66 @@ Matrix matParseDataset(const char* local)
 
             // Le V - 1 variaveis:
             int i;
-            for(i = 0; i < colunas; i++)
+            double valor;
+            for(i = 0; i < colunas - 1; i++)
             {
                 fscanf(arquivo, "%lf", &valor);
-                matColoca(data, lin, i, valor);
+                matColoca(data[0], lin, i, valor);
             }
             lin++;
+            linhasClasse++;
 
             // Le a classe:
-            fscanf(arquivo, "%lf", &valor);
+            int classe;
+            fscanf(arquivo, "%d", &classe);
+
+            // Se a classe atual for diferente da ultima:
+            if(ultimaClasse != classe)
+            {
+                // Crie o vetor media da ultima classe:
+                data[ultimaClasse + 1] = matVetMediaClasse(data[0], lin - linhasClasse, lin - 2);
+
+                // A ultima classe sera a atual:
+                ultimaClasse = classe;
+                linhasClasse = 1;
+            }
         }
+        // Le a quantidade de dados:
         else if(controle == 'N')
-        {
             fscanf(arquivo, "%d", &linhas);
 
-            if(colunas != 0)
-            {
-                criada = 1;
-                data = matCria(linhas, colunas - 1);
-            }
-        }
+        // Le a quantidade de variaveis:
         else if(controle == 'V')
-        {
             fscanf(arquivo, "%d", &colunas);
 
-            if(linhas != 0)
-            {
-                criada = 1;
-                data = matCria(linhas, colunas - 1);
-            }
-        }
+        // Le a quantidade de classes:
         else if(controle == 'K')
         {
-            fscanf(arquivo, "%lf", &valor);
-            //printf("%lf\n", valor);
+            // Impedir formato invalido:
+            if((linhas == 0) || (colunas == 0) || criada)
+            {
+                printf("Formato incorreto.\n");
+                fclose(arquivo);
+                return NULL;
+            }
+
+            // Le o numero de classes:
+            int nClasses;
+            fscanf(arquivo, "%d", &nClasses);
+            *k = nClasses;  // Retorna por referecia a quantidade de classes para 'pattern.c'.
+
+            // Aloca um vetor de matrizes (data[0] = Matriz do dataset. data[1..n] = Vetores media):
+            data = (Matrix*) malloc(sizeof(Matrix) * (nClasses + 1));
+
+            // Cria a matriz principal:
+            data[0] = matCria(linhas, colunas - 1);
+            criada = 1; // Informa que a matriz foi criada (Impedir formato invalido).
         }
     }
+
+    // Cria vetor media da ultima classe:
+    data[ultimaClasse + 1] = matVetMediaClasse(data[0], lin - linhasClasse, lin - 1);
 
     fclose(arquivo);
     return data;
-}
-
-Matrix matVetMedia (Matrix mat)
-{
-    // Prerequisitos (Matriz nao nula):
-    if(mat == NULL)
-        return NULL;
-
-    Matrix media = matCria(mat -> col, 1);
-    int i, j;
-    for(i = 0; i < mat -> col; i++)
-    {
-        double soma = 0;
-        for(j = 0; j < mat -> lin; j++)
-            soma += mat -> p[j][i];
-
-        soma = soma / mat -> lin;
-        media -> p[i][0] = soma;
-    }
-
-    return media; 
 }
