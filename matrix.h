@@ -41,5 +41,7 @@ void 	matTrocaLinhas (Matrix mat, int lin1, int lin2);        // Troca as linhas
 void	matMultiplicaEscalar(Matrix mat, double escalar);       // Multiplica a matriz 'mat' por um numero real.
 void 	matMultiplicaLinhaEscalar (Matrix mat, int lin, double escalar);           // Multiplica a linha 'lin' por um numero real.
 void 	matTransformaLinha (Matrix mat , int linAlvo, int lin, double escalar);    // Faz [linAlvo - (lin * escalar)] para todos os elementos da linha (auxilia LU).
+/*Retorna o vetor media*/
+Matrix matVetMedia (Matrix mat);
 
 #endif // MATRIX_H_INCLUDED
