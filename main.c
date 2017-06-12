@@ -1,50 +1,64 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "matrix.h"
+#include "patternrec.h"
 
-int main(int argc, char const *argv[])
+int main (int argc, char *argv[])
 {
-  /*ponteiro para os arquivos de entrada*/
-  // FILE *datasetTrainning = fopen(argv[1],"r");
-  // FILE *datasetComparison = fopen(argv[2],"r");
+    // Receber parametros da linha de comando:
+    if (argc <= 2)
+    {
+        printf("Especificar o nome dos arquivos que contem o dataset de treinamento e de verificacao.\n");
+        return 0;
+    }
 
-  // Receber parametros da linha de comando:
-	if (argc <= 2)
-	{
-		printf("Especificar o nome dos arquivos que contem o dataset de treinamento e de verificacao.\n");
-		return 0;
-	}
+    // Variavel para armazenar a quantidade de classes:
+    int k;
 
-	// Variavel para armazenar a quantidade de classes:
-	int k;
+    // Obtem a matriz do dataset de treinamento:
+    Matrix treinamento = prParseDataset(argv[1], &k);
 
-	// Vetor de matrizes: [0] = Matriz do dataset. [1..n] = Vetores media.
-	Matrix *data;
+    // Obtem a matriz do dataset de verificacao:
+    Matrix verificacao = prParseDataset(argv[2], &k);
 
-	// Obtem a matriz 'data' e os vetores media (matrix(n, 1)):
-	data = matParseDataset(argv[1], &k);
+    // Se houver erro durante o parsing:
+    if((treinamento == NULL) || (verificacao == NULL))
+        return 0;
 
-	// Mostra a matriz do dataset:
-	matImprime(data[0]);
+    // Se treinamento e verificacao forem incompativeis:
+    if(matNcolunas(treinamento) != matNcolunas(verificacao))
+        return 0;
 
-	// Mostra todos os vetores media:
-	printf("Vetores media (k = %d):\n", k);
-	int i;
-	for(i = 1; i <= k; i++)
-	{
-		printf("Classe %d:\n", i);
-		matImprime(data[i]);
-	}
+    // Cria vetores media:
+    Matrix *medias = prVetoresMedia(treinamento, k);
 
-	// Libera a matriz data[0] e todos os vetores media:
-	for(i = 0; i <= k; i++)
-		matLibera(data[i]);
+    // Obtem a covariancia e sua inversa:
+    Matrix cov = matCovariancia(treinamento);
+    Matrix covInv = matInversa(cov);
 
-	return 0;
+    // Classificacao de cada tupla:
+    int i;
+    int hits = 0;
 
-  /*liberacao dos arquivos de entrada*/
-  // fclose(datasetTrainning);
-  // fclose(datasetComparison);
+    for(i = 0; i < matNlinhas(verificacao); i++)
+    {
+        // Obtem a classe mais provavel para a tupla atual (verificacao[i]):
+        int classProv = prClasseProvavel(covInv, medias, matReferenciaLinha(verificacao, i), k);
 
-  return 0;
+        // Compara a classe encontrada com a classe real:
+        if(classProv == matPega(verificacao, i, matNcolunas(verificacao)))
+            hits++; // Se acertar, incremente o contador.
+    }
+
+    // Saida de dados no console:
+    prImprimeResultados(treinamento, verificacao, cov, medias, k, hits, argv[1], argv[2]);
+
+    // Libera as matrizes utilizadas:
+    matLibera(treinamento);
+    matLibera(verificacao);
+    matLiberaNmatrizes(medias, k);
+    matLibera(cov);
+    matLibera(covInv);
+	
+    return 0;
 }

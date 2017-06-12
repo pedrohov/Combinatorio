@@ -10,7 +10,6 @@ struct Tmatrix{
     double **p;  // Vetor de ponteiros. Apontam para o inicio de cada linha.
 };
 
-
 // Sub-rotinas:
 Matrix matCria(int lin, int col)
 {
@@ -68,7 +67,7 @@ Matrix matCarrega(char nomeArquivo[])
     {
         printf("Arquivo nao encontrado.\n");
         return NULL;
-    }
+    } 
 
     // Determinar quantidade de linhas e colunas;
     int i, j;
@@ -124,32 +123,8 @@ Matrix matVetMedia (Matrix mat)
         soma = soma / mat -> lin;
         media -> p[i][0] = soma;
     }
-
-    return media;
-}
-
-Matrix  matVetMediaClasse (Matrix mat, int linIni, int linFim)
-{
-    // Prerequisitos (Matriz nao nula):
-    if(mat == NULL)
-        return NULL;
-
-    // Cria uma matriz (n, 1):
-    Matrix media = matCria(mat -> col, 1);
-
-    // Armazena a media de cada variavel nas linhas da matriz:
-    int i, j;
-    for(i = 0; i < mat -> col; i++)
-    {
-        double soma = 0;
-        for(j = linIni; j <= linFim; j++)
-            soma += mat -> p[j][i];
-
-        soma = soma / (linFim - linIni + 1);
-        media -> p[i][0] = soma;
-    }
-
-    return media;
+    
+    return media; 
 }
 
 Matrix matCovariancia (Matrix mat)
@@ -187,14 +162,14 @@ Matrix matCovariancia (Matrix mat)
 
             covar = covar / (mat -> lin - 1);
 
-            // Armazena a variancia na matriz 'cov':
+            // Armazena a variancia na matriz 'cov': 
             cov -> p[i][j] = covar;
         }
     }
 
     // Libera vetor media:
     free(media);
-    return cov;
+    return cov;     
 }
 
 Matrix matTransposta(Matrix mat)
@@ -229,7 +204,7 @@ Matrix matOposta (Matrix mat)
     for(i = 0; i < mat -> lin; i++)
         for(j = 0; j < mat -> col; j++)
             oposta -> p[i][j] = -oposta -> p[i][j];
-
+        
     return oposta;
 }
 
@@ -279,7 +254,7 @@ Matrix matProdutoMatricial (Matrix mat1, Matrix mat2)
     for(i = 0; i < mat1 -> lin; i++)
         for(k = 0; k < mat2 -> col; k++)
             for(j = 0; j < mat1 -> col; j++)
-                mult -> p[i][k] = (mat1 -> p[i][j] * mat2 -> p[j][k]) + mult -> p[i][k];
+                mult -> p[i][k] = mult -> p[i][k] + (mat1 -> p[i][j] * mat2 -> p[j][k]);
 
     return mult;
 }
@@ -332,7 +307,7 @@ Matrix matDecomposicaoPivotLU(Matrix upper, Matrix P)
     for(i = 0; i < upper -> lin - 1; i++)
     {
         // Localiza o pivo:
-        int pivo = matLocalizaPivo(upper, i + 1, i);
+        int pivo = matLocalizaPivo(upper, i, i);
 
         // Troca de linhas se necessario:
         if(pivo != i)
@@ -395,18 +370,23 @@ Matrix matSubstSucessiva(Matrix lower, Matrix b)
     // Prerequisitos (Matriz quadrada nao nula, vetor do tamanho da matriz):
     if((lower == NULL) || (lower -> lin != lower -> col))
         return NULL;
-
+    
     // Cria uma matriz (1, n) auxiliar para armazenar 'y' em (Ly = b):
     Matrix aux = matCria(1, lower -> col);
 
+    // Primeira linha e usada como padrao:
+    aux -> p[0][0] = b -> p[0][0] / lower -> p[0][0];
+
+    // Itera sobre cada linha (1 variavel por linha):
     int i, j;
-    aux -> p[0][0] = b -> p[0][0] / lower -> p [0][0];
     for(i = 1; i < lower -> lin; i++)
     {
+        // Soma cada variavel conhecida com seu coeficiente:
         double soma = 0;
         for(j = 0; j < i; j++)
             soma += lower -> p[i][j] * aux -> p[0][j];
 
+        // Resolve a igualdade e armazena:
         aux -> p[0][i] = (b -> p[i][0] - soma) / lower -> p[i][i];
     }
 
@@ -422,14 +402,19 @@ Matrix matSubstRetroativa(Matrix upper, Matrix y)
     // Cria uma matriz (1, n) para armazenar 'x' em (Ux = y):
     Matrix res = matCria(1, upper -> lin);
 
-    int i, j;
+    // Ultima linha e usada como padrao:
     res -> p[0][y -> col - 1] = y -> p[0][y -> col - 1] / upper -> p[upper -> col - 1][upper -> col - 1];
+
+    // Itera sobre cada linha, de baixo para cima:
+    int i, j;
     for(i = upper -> col - 2; i >= 0; i--)
     {
+        // Soma cada variavel conhecida com seu coeficiente:
         double soma = 0;
         for(j = i; j < upper -> col; j++)
             soma += upper -> p[i][j] * res -> p[0][j];
 
+        // Resolve a igualdade e armazena:
         res -> p[0][i] = (y -> p[0][i] - soma) / upper -> p[i][i];
     }
 
@@ -453,12 +438,12 @@ Matrix matInversa(Matrix mat)
     Matrix upper = matCopia(mat);
     Matrix lower = matDecomposicaoPivotLU(upper, P);
 
-    //
+    // Resolve n sistemas, para cada coluna de identidade:
     int i, j;
+    Matrix b = matCria(mat -> lin, 1);
     for(i = 0; i < mat -> col; i++)
     {
         // Resolva o sistema para a coluna atual da identidade:
-        Matrix b = matCria(mat -> lin, 1);
         int k;
         for(k = 0; k < mat -> lin; k++)
             b -> p[k][0] = identidade -> p[k][i];
@@ -469,9 +454,10 @@ Matrix matInversa(Matrix mat)
         for(j = 0; j < inversa -> lin; j++)
             inversa -> p[j][i] = colInversa -> p[0][j];
 
-        matLibera(b);
+        matLibera(colInversa);
     }
 
+    matLibera(b);
     matLibera(P);
     matLibera(upper);
     matLibera(lower);
@@ -516,7 +502,7 @@ double matSuperior (Matrix mat)
             matTransformaLinha(mat, j, i, mult);
         }
     }
-
+    
     // Calcula o determinante (diagonal principal):
     for(i = 0; i < mat -> lin; i++)
         det = det * mat -> p[i][i];
@@ -553,7 +539,7 @@ double matSuperiorPivot (Matrix mat)
                     mat -> p[j][k] = mat -> p[j][k] - (mult * mat -> p[i][k]);
             }
     }
-
+    
     // Calcula o determinante (diagonal principal):
     for(i = 0; i < mat -> lin; i++)
         det = det * mat -> p[i][i];
@@ -563,8 +549,8 @@ double matSuperiorPivot (Matrix mat)
 
 double matPega(Matrix mat, int lin, int col)
 {
-    // Prerequisitos (Matriz nao nula, posicao valida):
-    if((mat == NULL) || (lin < 0) || (lin >= mat -> lin) || (col < 0) || (col >= mat -> col))
+    // Prerequisitos (Matriz nao nula):
+    if(mat == NULL)
         return -1;
 
     return mat -> p[lin][col];
@@ -585,6 +571,15 @@ double matProdutoEscalar (Matrix mat1, Matrix mat2)
     return resultado;
 }
 
+double* matReferenciaLinha (Matrix mat, int lin)
+{
+    // Prerequisitos (Matrize nao nula):
+    if(mat == NULL)
+        return 0;
+
+    return mat -> p[lin];
+}
+
 int matNcolunas (Matrix mat)
 {
     // Prerequisitos (Matrize nao nula):
@@ -592,6 +587,15 @@ int matNcolunas (Matrix mat)
         return 0;
 
     return mat -> col;
+}
+
+int matNlinhas (Matrix mat)
+{
+    // Prerequisitos (Matrize nao nula):
+    if(mat == NULL)
+        return 0;
+
+    return mat -> lin;
 }
 
 int matIgual (Matrix mat1, Matrix mat2)
@@ -618,7 +622,7 @@ int matLocalizaPivo (Matrix mat , int lin, int col)
 
     int i;
     int pivo = lin; // A linha inicial sera o pivo.
-    double maior = mat -> p[lin][col];
+    double maior = fabs(mat -> p[lin][col]);
 
     // Percorre as demais linhas procurando um valor maior:
     for(i = lin + 1; i < mat -> lin; i++)
@@ -629,6 +633,26 @@ int matLocalizaPivo (Matrix mat , int lin, int col)
         }
 
     return pivo;
+}
+
+void matSetNcolunas (Matrix mat, int n)
+{
+    // Prerequisitos (Matriz nao nula, n positivo):
+    if((mat == NULL) || (n <= 0))
+        return;
+
+    mat -> col = n;
+    return;
+}
+
+void matSetNlinhas (Matrix mat, int n)
+{
+    // Prerequisitos (Matriz nao nula, n positivo):
+    if((mat == NULL) || (n <= 0))
+        return;
+
+    mat -> lin = n;
+    return;
 }
 
 void matLibera(Matrix mat)
@@ -651,6 +675,23 @@ void matLibera(Matrix mat)
     return;
 }
 
+void matLiberaNmatrizes(Matrix* vet, int n)
+{
+    // Prerequisitos (Vetor nao nulo, n positivo):
+    if((vet == NULL) || (n <= 0))
+        return;
+
+    // Libera cada matriz:
+    int i;
+    for(i = 0; i < n; i++)
+        matLibera(vet[i]);
+
+    // Libera o vetor:
+    free(vet);
+
+    return;
+}
+
 void matImprime(Matrix mat)
 {
     // Prerequisitos (Matriz nao nula):
@@ -661,11 +702,12 @@ void matImprime(Matrix mat)
     int i,j;
     for(i = 0; i < mat->lin; i++)
     {
-        for(j = 0; j < mat -> col; j++)
-            printf("%.2lf\t", mat -> p[i][j]);
+        printf("| ");
+        for(j = 0; j < mat -> col - 1; j++)
+            printf("%lf\t", mat -> p[i][j]);
 
         // Nova linha para cada nova linha da matriz:
-        printf("\n");
+        printf("%lf |\n", mat -> p[i][j]);
     }
     printf("\n");
 
@@ -675,7 +717,7 @@ void matImprime(Matrix mat)
 void matColoca(Matrix mat, int lin, int col, double valor)
 {
     // Prerequisitos (Matriz nao nula, posicao valida):
-    if((mat == NULL) || (lin < 0) || (lin >= mat -> lin) || (col < 0) || (col >= mat -> col))
+    if((mat == NULL) || (lin < 0) || (lin >= mat -> lin) || (col < 0))
         return;
 
     mat -> p[lin][col] = valor;
@@ -769,113 +811,4 @@ void matTransformaLinha (Matrix mat , int linAlvo, int lin, double escalar)
         mat -> p[linAlvo][i] = mat -> p[linAlvo][i] - (mat -> p[lin][i] * escalar);
 
     return;
-}
-
-Matrix* matParseDataset(const char* local, int *k)
-{
-    // Abre o arquivo para leitura:
-    FILE *arquivo = fopen(local, "r");
-
-    // Caso o arquivo nao for encontrado:
-    if(arquivo == NULL)
-    {
-        printf("Arquivo '%s' nao encontrado.\n", local);
-        return NULL;
-    }
-
-    Matrix *data = NULL;            // Vetor de matrizes (data[0] = dataset, data[1..n] = vetores media).
-    int linhas = 0, colunas = 0;    // Qtd de linhas e colunas da matriz.
-
-    char controle;                  // Auxilia na leitura do arquivo.
-    int criada = 0;                 // Detectar datasets invalidos.
-    int lin = 0;                    // Linha atual de insercao.
-
-    int ultimaClasse = 0;           // Id da ultima classe lida.
-    int linhasClasse = 0;           // Quantidade de linhas da matriz data[0] da ultima classe lida.
-
-    // Parsing do dataset:
-    while(fscanf(arquivo, "%c", &controle) != EOF)
-    {
-        // Comentario: Pula a linha:
-        if(controle == '#')
-        {
-            char skip = '0';
-            while(skip != '\n')
-                fscanf(arquivo, "%c", &skip);
-        }
-        // Listagem dos valores da tupla:
-        else if(controle == 't')
-        {
-            // Impedir formato invalido:
-            if(!criada)
-            {
-                printf("Formato incorreto.\n");
-                fclose(arquivo);
-                return NULL;
-            }
-
-            // Le V - 1 variaveis:
-            int i;
-            double valor;
-            for(i = 0; i < colunas - 1; i++)
-            {
-                fscanf(arquivo, "%lf", &valor);
-                matColoca(data[0], lin, i, valor);
-            }
-            lin++;
-            linhasClasse++;
-
-            // Le a classe:
-            int classe;
-            fscanf(arquivo, "%d", &classe);
-
-            // Se a classe atual for diferente da ultima:
-            if(ultimaClasse != classe)
-            {
-                // Crie o vetor media da ultima classe:
-                data[ultimaClasse + 1] = matVetMediaClasse(data[0], lin - linhasClasse, lin - 2);
-
-                // A ultima classe sera a atual:
-                ultimaClasse = classe;
-                linhasClasse = 1;
-            }
-        }
-        // Le a quantidade de dados:
-        else if(controle == 'N')
-            fscanf(arquivo, "%d", &linhas);
-
-        // Le a quantidade de variaveis:
-        else if(controle == 'V')
-            fscanf(arquivo, "%d", &colunas);
-
-        // Le a quantidade de classes:
-        else if(controle == 'K')
-        {
-            // Impedir formato invalido:
-            if((linhas == 0) || (colunas == 0) || criada)
-            {
-                printf("Formato incorreto.\n");
-                fclose(arquivo);
-                return NULL;
-            }
-
-            // Le o numero de classes:
-            int nClasses;
-            fscanf(arquivo, "%d", &nClasses);
-            *k = nClasses;  // Retorna por referecia a quantidade de classes para 'pattern.c'.
-
-            // Aloca um vetor de matrizes (data[0] = Matriz do dataset. data[1..n] = Vetores media):
-            data = (Matrix*) malloc(sizeof(Matrix) * (nClasses + 1));
-
-            // Cria a matriz principal:
-            data[0] = matCria(linhas, colunas - 1);
-            criada = 1; // Informa que a matriz foi criada (Impedir formato invalido).
-        }
-    }
-
-    // Cria vetor media da ultima classe:
-    data[ultimaClasse + 1] = matVetMediaClasse(data[0], lin - linhasClasse, lin - 1);
-
-    fclose(arquivo);
-    return data;
 }
