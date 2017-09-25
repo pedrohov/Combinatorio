@@ -1,0 +1,62 @@
+# Os datasets de treinamento seguem o seguinte padrão:
+
+# Linhas que começam com '#' são comentários.
+# A linha que começa com 'N' informa quantos dados o datasheet possui.
+# A linha que começa com 'V' informa a quantidade de variáveis do datasheet.
+# A linha que começa com 'K' informa a quantidade de classes para classificação.
+# A linha que começa com 'e' indica o fim do arquivo.
+# Linhas que começam com 't' são as tuplas com os dados de cada variável e a classe.
+
+# Mais informações no enunciado.
+
+
+
+# Exemplo:
+##############################################################################
+#                                                                            #
+#                           IRIS-TREINAMENTO.TXT                             #
+#                                                                            #
+#                   Dataset inspirado no dataset Iris de Fisher              #
+#                Link: http://archive.ics.uci.edu/ml/datasets/Iris           #
+#                                                                            #
+##############################################################################
+
+# Numero de linhas totais do dataset
+N 15
+
+# Numero de variaveis (colunas) do dataset. Destes, (V-1) sao entrada, e a
+# ultima e’ a classe
+V 5
+
+# Numero de classes do dataset
+K 3
+
+# Listagem das tuplas do dataset, incluido as (V-1) entradas e 1 classe. Neste
+# caso, as colunas correspondem as caracteristicas de flores Iris, a saber:
+# Coluna 1 (entrada) : sepal.length; Coluna 2 (entrada) : sepal.width,
+# Coluna 3 (entrada) : petal.length; Coluna 4 (entrada) : petal.width,
+# Coluna 5 (saida) : class
+
+# Tuplas da classe 0: ‘Iris Setosa’
+t 5.1 3.5 1.4 0.2 0
+t 4.9 3.0 1.4 0.2 0
+t 4.7 3.2 1.3 0.2 0
+t 4.6 3.1 1.5 0.2 0
+t 5.0 3.6 1.4 0.2 0
+
+# Tuplas da classe 1: ‘Iris Versicolor’
+t 7.0 3.2 4.7 1.4 1
+t 6.4 3.2 4.5 1.5 1
+t 6.9 3.1 4.9 1.5 1
+t 5.5 2.3 4.0 1.3 1
+t 6.5 2.8 4.6 1.5 1
+
+# Tuplas da classe 2: ‘Iris Virginica’
+t 6.9 3.2 5.7 2.3 2
+t 5.6 2.8 4.9 2.0 2
+t 7.7 2.8 6.7 2.0 2
+t 6.3 2.7 4.9 1.8 2
+t 6.7 3.3 5.7 2.1 2
+
+# Fim de arquivo
+e
