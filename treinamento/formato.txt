@@ -1,4 +1,4 @@
-# Os datasets de treinamento seguem o seguinte padrão:
+# Os datasets de treinamento devem seguir o seguinte padrão:
 
 # Linhas que começam com '#' são comentários.
 # A linha que começa com 'N' informa quantos dados o datasheet possui.
